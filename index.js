@@ -32,7 +32,7 @@ app.post('/send-call', async (req, res) => {
     token,
     data: {
       type: 'call',
-      from,
+      caller: from,
     },
     notification: {
       title: '📞 Incoming Call',
