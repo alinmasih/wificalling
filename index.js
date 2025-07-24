@@ -42,11 +42,14 @@ app.post('/send-call', async (req, res) => {
 
   try {
     const response = await admin.messaging().send(message);
+    console.log('✅ Push sent:', response);
     res.status(200).json({ success: true, response });
   } catch (error) {
+    console.error('❌ Failed to send FCM:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
 
 // Start server
 const PORT = process.env.PORT || 3000;
