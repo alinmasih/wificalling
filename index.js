@@ -1,49 +1,66 @@
+// Load environment variables (needed for local development)
+require('dotenv').config();
+
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const admin = require('firebase-admin');
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// Load service account from environment variable
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+// Parse Firebase service account key from environment variable
+const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
 
+// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-app.post('/send-call', async (req, res) => {
-  const { token, from } = req.body;
-
-  if (!token || !from) {
-    return res.status(400).send('Missing fields');
-  }
+// Endpoint to send a test call notification
+app.post('/send-notification', async (req, res) => {
+  const { token, title, body, data } = req.body;
 
   const message = {
-    token,
+    token: token,
     notification: {
-      title: `Incoming call from ${from}`,
-      body: 'Tap to answer',
+      title: title || 'Incoming Call',
+      body: body || 'Someone is calling you!',
     },
-    data: {
-      type: 'call',
-      caller: from,
+    data: data || {
+      callType: 'voice',
     },
-    android: { priority: 'high' },
-    apns: { payload: { aps: { sound: 'default' } } },
+    android: {
+      priority: 'high',
+      notification: {
+        sound: 'default',
+        channelId: 'calls',
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: 'default',
+        },
+      },
+    },
   };
 
   try {
-    await admin.messaging().send(message);
-    res.status(200).send('Call sent');
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('Failed to send call');
+    const response = await admin.messaging().send(message);
+    console.log('Successfully sent message:', response);
+    res.status(200).json({ success: true, id: response });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log('✅ Server running on port 3000');
+// Home route
+app.get('/', (req, res) => {
+  res.send('Firebase Push Notification Server is Running ✅');
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
