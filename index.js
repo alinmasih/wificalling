@@ -1,4 +1,4 @@
-const admin = require('firebase-admin');
+  const admin = require('firebase-admin');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -29,7 +29,7 @@ app.post('/send-call', async (req, res) => {
   }
 
   const message = {
-    token,
+    token: token,
     data: {
       type: 'call',
       caller: from,
