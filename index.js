@@ -1,11 +1,13 @@
 const admin = require('firebase-admin');
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
-// Parse the JSON from Render environment variable
+// Parse the JSON from environment variable (FIREBASE_CONFIG must be stringified JSON)
 const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
 
 // Initialize Firebase Admin
@@ -13,18 +15,29 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-// Example route
+// Health check route
 app.get('/', (req, res) => {
-  res.send('Firebase Admin SDK is working securely 🚀');
+  res.send('🔥 Firebase Admin SDK is working securely on Render');
 });
 
-// Send push notification (example)
-app.post('/send-notification', async (req, res) => {
-  const { token, title, body } = req.body;
+// ✅ Route to trigger call push notification
+app.post('/send-call', async (req, res) => {
+  const { token, from } = req.body;
+
+  if (!token || !from) {
+    return res.status(400).json({ success: false, error: 'Missing "token" or "from"' });
+  }
 
   const message = {
-    notification: { title, body },
-    token: token
+    token,
+    data: {
+      type: 'call',
+      from,
+    },
+    notification: {
+      title: '📞 Incoming Call',
+      body: `Call from ${from}`,
+    }
   };
 
   try {
@@ -38,5 +51,5 @@ app.post('/send-notification', async (req, res) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
